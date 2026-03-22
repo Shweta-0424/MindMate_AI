@@ -1,8 +1,12 @@
-import axios from "axios"
-const geminiResponse=async (command,assistantName,userName)=>{
-try {
-    const apiUrl=process.env.GEMINI_API_URL
-    const prompt = `You are a virtual assistant named ${assistantName} created by ${userName}. 
+import { Groq } from "groq-sdk";
+
+const groqResponse = async (command, assistantName, userName) => {
+  try {
+    const client = new Groq({
+      apiKey: process.env.GROQ_API_KEY, 
+    });
+
+    const systemPrompt = `You are a virtual assistant named ${assistantName} created by ${userName}. 
 You are not Google. You will now behave like a voice-enabled assistant.
 
 Your task is to understand the user's natural language input and respond with a JSON object like this:
@@ -17,7 +21,7 @@ Your task is to understand the user's natural language input and respond with a 
 
 Instructions:
 - "type": determine the intent of the user.
-- "userinput": original sentence the user spoke.
+- "userInput": original sentence the user spoke.
 - "response": A short voice-friendly reply, e.g., "Sure, playing it now", "Here's what I found", "Today is Tuesday", etc.
 
 Type meanings:
@@ -36,26 +40,28 @@ Type meanings:
 
 Important:
 - Use ${userName} agar koi puche tume kisne banaya 
-- Only respond with the JSON object, nothing else.
+- Only respond with the JSON object, nothing else.`;
 
+    const completion = await client.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `now your userInput- ${command}` }
+      ],
+      response_format: { type: "json_object" }, 
+      temperature: 0.7,
+      max_completion_tokens: 1024, 
+    });
 
-now your userInput- ${command}
-`;
+    // Get the raw string text (just like Gemini's text output)
+    const rawText = completion.choices[0].message.content;
+    
+    // RETURN THE RAW STRING EXACTLY LIKE GEMINI DID (Do not parse it here!)
+    return rawText;
 
+  } catch (error) {
+    console.error("Groq Error:", error);
+  }
+};
 
-
-
-
-    const result=await axios.post(apiUrl,{
-    "contents": [{
-    "parts":[{"text": prompt}]
-    }]
-    })
-return result.data.candidates[0].content.parts[0].text
-} catch (error) {
-    console.log(error)
-}
-}
-
-export default geminiResponse
-
+export default groqResponse;

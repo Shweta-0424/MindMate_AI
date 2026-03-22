@@ -1,5 +1,6 @@
  import uploadOnCloudinary from "../config/cloudinary.js"
 import geminiResponse from "../gemini.js"
+import groqResponse from "../groq.js"
 import User from "../models/user.model.js"
 import moment from "moment"
  export const getCurrentUser=async (req,res)=>{
@@ -46,7 +47,8 @@ export const askToAssistant=async (req,res)=>{
       user.save()
       const userName=user.name
       const assistantName=user.assistantName
-      const result=await geminiResponse(command,assistantName,userName)
+      console.log("Command received in askToAssistant:", command); // Debugging line to check the received command
+      const result=await groqResponse(command,assistantName,userName)
 
       const jsonMatch=result.match(/{[\s\S]*}/)
       if(!jsonMatch){
